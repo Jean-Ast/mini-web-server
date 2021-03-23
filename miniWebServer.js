@@ -6,62 +6,80 @@ app.use(express.json()); // With this line of code Express can understand json f
 app.use(express.urlencoded({extended: false}))
 let messagesJSON = [
 {
-  "Id": "1",
+  "id": "1",
   "msg": "Hola"
 },
 {
-  "Id": "2",
+  "id": "2",
   "msg": "Mundo"
 }
 ];
 
-// 1) 
+// 1) GET
 app.get("/messages", (req, resp) => {
     resp.json(messagesJSON);
   });
 
-  // 2) 
+  // 2) POST
   app.post("/messages", (req, resp) => {
-    console.log(req.body);
-    const NewMessage = {
-      "Id": "3",  
-      "msg": "Everythings fine bro"
+    // console.log(req.body);
+    const newMessage = {
+      id: req.body.id,
+      msg: req.body.msg
     }
-    // If a dont send a key
-    // if(!NewMessage.id || !NewMessage.msg){
-    //   return resp.status(400).json({msg: "Please add a id and name"})
-    // }
-    messagesJSON.push(NewMessage)
+    if (!newMessage.id || !newMessage.msg) {
+      return resp.json({msg: 'Please enter an Id and message'})
+    }
+    messagesJSON.push(newMessage)
     resp.send(messagesJSON);
   });
 
-  // 3)
+  // 3) PUT
   app.put("/messages/:msgId", (req, resp) => {
-    const found = messagesJSON.some(m => m.Id == req.params.msgId);
+    // Find message to update
+    const found = messagesJSON.some(m => m.id == req.params.msgId);
     
     if(found){
       const updateMsg = req.body;
       messagesJSON.forEach(m => {
-        m.msg = updateMsg.msg;
+        if (m.id == req.params.msgId) {
+          m.msg = updateMsg.msg;
+        }
       });
       resp.send(messagesJSON)
     } else {
       resp.send({"msg": `Message Id ${req.params.msgId} not found`})
     }
-    
     console.log(found);
   });
 
-  // 4)
+  // 4) DELETE
   app.delete("/messages/:msgId", (req, resp) => {
-    const found = messagesJSON.some(m => m.Id == req.params.msgId);
+    // Find message to delete
+    const found = messagesJSON.some(m => m.id == req.params.msgId);
+    const idToDelete = req.params.msgId;
+
     if ( found ) {
+      removeMsg(messagesJSON,idToDelete);
       resp.send({
-        "msg": `User ${req.params.msgId} has been deleted`
+        "msg": `User ${req.params.msgId} has been deleted`,
+        messagesJSON: messagesJSON
       })
+
     } else {
       resp.send({"msg": `Message Id ${req.params.msgId} not found`})
     }
+    console.log(found)
   });
 
   app.listen(port, () => console.log(`Listening on port ${port}`));
+
+  const removeMsg = (arr, id) => {
+    const index = arr.findIndex(elem => {
+       return elem.id === String(id);
+    });
+    if(index === -1){
+       return false;
+    };
+    return arr.splice(index, 1);
+ };
